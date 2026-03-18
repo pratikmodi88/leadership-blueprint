@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora | Interactive Workflow Blueprint</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --accent: #22a6b3;
+            --text: #e6edf3;
+            --text-dim: #8b949e;
+            --border: rgba(48, 54, 61, 0.6);
+            --glass: rgba(22, 27, 34, 0.8);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Container for the Workflow */
+        .workflow-container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+        }
+
+        .header { text-align: center; margin-bottom: 4rem; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .header p { color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.8rem; }
+
+        /* The Visual Flow */
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            margin-bottom: 4rem;
+        }
+
+        /* Connecting Line */
+        .flow-line {
+            position: absolute;
+            top: 45px;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: repeating-linear-gradient(to right, var(--accent) 0, var(--accent) 10px, transparent 10px, transparent 20px);
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .node {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .node-icon {
+            width: 90px;
+            height: 90px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        }
+
+        .node:hover .node-icon {
+            border-color: var(--accent);
+            transform: scale(1.15) translateY(-5px);
+            box-shadow: 0 0 30px rgba(34, 166, 179, 0.3);
+        }
+
+        .node.active .node-icon {
+            border-color: var(--accent);
+            background: rgba(34, 166, 179, 0.1);
+        }
+
+        .node-label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .node-status {
+            font-size: 0.7rem;
+            color: var(--accent);
+            background: rgba(34, 166, 179, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 800;
+        }
+
+        /* Detail Area */
+        .detail-panel {
+            background: rgba(11, 14, 20, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 180px;
+            transition: 0.3s;
+        }
+
+        .detail-content {
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+        .detail-content.active { display: block; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .detail-content h4 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent); margin-bottom: 0.8rem; }
+        .detail-content p { font-size: 1rem; color: var(--text-dim); }
+
+        /* Responsive Mobile Fixes */
+        @media (max-width: 768px) {
+            .flow-diagram { flex-direction: column; align-items: flex-start; gap: 2.5rem; }
+            .flow-line { display: none; }
+            .node { flex-direction: row; gap: 1.5rem; width: 100%; text-align: left; }
+            .node-icon { width: 60px; height: 60px; font-size: 1.5rem; margin-bottom: 0; }
+            .workflow-container { padding: 1.5rem; }
+        }
+
+        /* Pulse Animation for Active Node */
+        .pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+            opacity: 0;
+            z-index: -1;
+        }
+        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="workflow-container">
+        <header class="header">
+            <p>Behind the Scenes</p>
+            <h1>Autonomous Portfolio Loop.</h1>
+        </header>
+
+        <div class="flow-diagram">
+            <div class="flow-line"></div>
+
+            <!-- Step 1 -->
+            <div class="node active" onclick="showDetail(1)">
+                <div class="node-icon">🧠<div class="pulse"></div></div>
+                <div class="node-label">Strategy</div>
+                <div class="node-status">Selection</div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="node" onclick="showDetail(2)">
+                <div class="node-icon">✍️</div>
+                <div class="node-label">Synthesis</div>
+                <div class="node-status">Drafting</div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="node" onclick="showDetail(3)">
+                <div class="node-icon">🎨</div>
+                <div class="node-label">Design</div>
+                <div class="node-status">SVG Build</div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="node" onclick="showDetail(4)">
+                <div class="node-icon">💻</div>
+                <div class="node-label">Code</div>
+                <div class="node-status">HTML Build</div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="node" onclick="showDetail(5)">
+                <div class="node-icon">🚀</div>
+                <div class="node-label">Deploy</div>
+                <div class="node-status">Push</div>
+            </div>
+        </div>
+
+        <div class="detail-panel">
+            <div id="detail-1" class="detail-content active">
+                <h4>1. Strategic RAG Selection</h4>
+                <p>The agent scans its proprietary 'Model Backlog' and uses RAG (Retrieval-Augmented Generation) to select the framework that best aligns with current leadership pillars and market trends.</p>
+            </div>
+            <div id="detail-2" class="detail-content">
+                <h4>2. Executive Summary Synthesis</h4>
+                <p>Instead of generic text, the agent synthesizes the model into a professional, executive-level summary, ensuring the tone matches Pratik's leadership persona perfectly.</p>
+            </div>
+            <div id="detail-3" class="detail-content">
+                <h4>3. Real-time SVG Engineering</h4>
+                <p>The agent generates a minimalist, high-quality SVG diagram from scratch to illustrate the model's core logic. No static assets are used; everything is built on the fly.</p>
+            </div>
+            <div id="detail-4" class="detail-content">
+                <h4>4. Automated Page Generation</h4>
+                <p>A new, responsive HTML page is built using our Glassmorphism design language. The portfolio index is updated automatically to include the new model in the grid.</p>
+            </div>
+            <div id="detail-5" class="detail-content">
+                <h4>5. Git Deployment & Notification</h4>
+                <p>The workflow closes by committing the changes and pushing to GitHub. Simultaneously, an email is triggered via the Resend API to notify all portfolio subscribers.</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 3rem; text-align: center; font-size: 0.8rem; color: var(--text-dim); opacity: 0.6;">
+            Interactive Blueprint by ✨ Aurora | Click the icons to explore each step.
+        </div>
+    </div>
+
+    <script>
+        function showDetail(num) {
+            // Remove active from all nodes
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.pulse').forEach(p => p.style.display = 'none');
+            
+            // Add active to clicked
+            const nodes = document.querySelectorAll('.node');
+            nodes[num-1].classList.add('active');
+            nodes[num-1].querySelector('.pulse').style.display = 'block';
+
+            // Hide all detail content
+            document.querySelectorAll('.detail-content').forEach(d => d.classList.remove('active'));
+            
+            // Show selected detail
+            document.getElementById('detail-' + num).classList.add('active');
+        }
+    </script>
+</body>
+</html>
